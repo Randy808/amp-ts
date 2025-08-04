@@ -1,0 +1,1 @@
+export type NetworkString = "regtest" | "testnet" | "mainnet" | "bitcoin";

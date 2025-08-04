@@ -1,0 +1,26 @@
+{
+  "name": "amp-ts",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "autobahn": "^22.11.1",
+    "bip32": "^5.0.0-rc.0",
+    "bip39": "^3.1.0",
+    "bip66": "^2.0.0",
+    "bitcoinjs-lib": "^6.1.7",
+    "bitcoinjs-message": "^2.2.0",
+    "bs58": "^6.0.0",
+    "liquidjs-lib": "6.0.2-liquid.8",
+    "tiny-secp256k1": "^2.2.4"
+  },
+  "devDependencies": {
+    "@types/autobahn": "^20.9.4",
+    "@types/node": "^24.1.0"
+  }
+}
