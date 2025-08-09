@@ -48,7 +48,7 @@ export class GreenClient {
     }
   }
 
-  public async login(publicKey: Uint8Array, sig): Promise<any> {
+  public async login(sig: Uint8Array): Promise<any> {
     const r = sig.slice(0, 32);
     const s = sig.slice(32, 64);
     const derSig = bip66.encode(r, s);
