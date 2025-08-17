@@ -23,16 +23,17 @@ async function main() {
     }
   }
 
-  await wallet.getNewAddress();
+  // await wallet.getNewAddress();
   let addresses = await wallet.listAddresses();
+  const oldestAddressIndex = addresses.length - 1;
   console.log(
-    `Send testnet L-BTC to the following address (use liquidtestnet.com for faucet):\n${addresses[0].ad}`
+    `Send testnet L-BTC to the following address (use liquidtestnet.com for faucet):\n${addresses[oldestAddressIndex].ad}`
   );
   await askQuestion("Press enter once your transaction is confirmed...");
 
   let outputs = await wallet.getUnspentOutputs();
   let txDetails = await wallet.spendUnconfidentialLbtcOutput({
-    hexP2wshScript: addresses[0].script,
+    hexP2wshScript: addresses[oldestAddressIndex].script,
     hexTxId: outputs[0].txhash,
     utxoAmountInSats: parseInt(outputs[0].value),
     amountToSendInSats: 10000,

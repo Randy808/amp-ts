@@ -76,7 +76,6 @@ export default class AmpWallet {
     };
 
     wallet = new Proxy(wallet, connectAndLoginToGreenBackend);
-    debugger;
     return wallet;
   }
 
@@ -263,7 +262,7 @@ export default class AmpWallet {
       blinding_nonces: Array(pset.data.outputs.length).fill(""),
     };
 
-    return this.client.sendRawTx(txHex, blindingNonces);
+    // return this.client.sendRawTx(txHex, blindingNonces);
   }
 
   async createAMPSubaccount(
