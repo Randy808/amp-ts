@@ -130,7 +130,9 @@ export default class AmpWallet {
     return this.client.login(sig);
   }
 
-  async getUnspentOutputs(subaccountId: number = DEFAULT_SUBACCOUNT_ID): Promise<UnspentOutput[]> {
+  async getUnspentOutputs(
+    subaccountId: number = DEFAULT_SUBACCOUNT_ID
+  ): Promise<UnspentOutput[]> {
     const MINIMUM_CONFIRMATIONS = 0;
     return this.client.getUnspentOutputs(
       MINIMUM_CONFIRMATIONS,
@@ -139,27 +141,32 @@ export default class AmpWallet {
     );
   }
 
-  async getNewAddress(subaccountId: number = DEFAULT_SUBACCOUNT_ID): Promise<GetNewAddressResponse> {
+  async getNewAddress(
+    subaccountId: number = DEFAULT_SUBACCOUNT_ID
+  ): Promise<GetNewAddressResponse> {
     return this.client.getAddress(subaccountId);
   }
 
-  spendUnconfidentialLbtcOutput({
-    hexP2wshScript,
-    hexTxId,
-    utxoAmountInSats,
-    amountToSendInSats,
-    recipientAddress,
-    feeInSats,
-    prevoutIndex,
-  }: {
-    hexP2wshScript: string;
-    hexTxId: string;
-    utxoAmountInSats: number;
-    amountToSendInSats: number;
-    recipientAddress: string;
-    feeInSats: number;
-    prevoutIndex: number;
-  }, subaccountId: number = DEFAULT_SUBACCOUNT_ID) {
+  spendUnconfidentialLbtcOutput(
+    {
+      hexP2wshScript,
+      hexTxId,
+      utxoAmountInSats,
+      amountToSendInSats,
+      recipientAddress,
+      feeInSats,
+      prevoutIndex,
+    }: {
+      hexP2wshScript: string;
+      hexTxId: string;
+      utxoAmountInSats: number;
+      amountToSendInSats: number;
+      recipientAddress: string;
+      feeInSats: number;
+      prevoutIndex: number;
+    },
+    subaccountId: number = DEFAULT_SUBACCOUNT_ID
+  ) {
     if (feeInSats >= utxoAmountInSats) {
       throw new Error(
         "The fee needs to be smaller than the value of the utxo being sent"

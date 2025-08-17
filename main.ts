@@ -12,7 +12,17 @@ async function main() {
 
   await wallet.register();
   await wallet.login();
-  await wallet.createAMPSubaccount();
+
+  try {
+    await wallet.createAMPSubaccount();
+  } catch (e) {
+    if (e.args.includes("Subaccount already exists")) {
+      console.log("Subaccount exists, skipping subaccount creation...");
+    } else {
+      throw e;
+    }
+  }
+
   await wallet.getNewAddress();
   let addresses = await wallet.listAddresses();
   console.log(
@@ -31,7 +41,7 @@ async function main() {
     prevoutIndex: outputs[0].pt_idx,
   });
 
-  console.log(`Transaction sent successfully: ${JSON.stringify(txDetails)}`)
+  console.log(`Transaction sent successfully: ${JSON.stringify(txDetails)}`);
 }
 
 (async () => {
