@@ -15,6 +15,9 @@ export class GreenClient {
   private ACTION_PREFIX = "com.greenaddress";
 
   constructor() {
+    (autobahn as any).log.debug = () => {};
+    (autobahn as any).log.warn = () => {};
+
     this.connection = new autobahn.Connection({
       url: LIQUID_TESTNET_URL,
       realm: "realm1",
@@ -28,6 +31,17 @@ export class GreenClient {
         resolve();
       };
       this.connection.open();
+    });
+  }
+
+  public disconnect(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.connection.onclose = (_reason, _details) => {
+        this.session = null;
+        resolve();
+        return true;
+      };
+      this.connection.close();
     });
   }
 
@@ -140,7 +154,7 @@ export class GreenClient {
     return fundVaultResponse;
   }
 
-  public async signRawTx(txHex, blindingData?: { blinding_nonces: string[] }) {
+  public async signRawTx(txHex: string, blindingData?: { blinding_nonces: string[] }) {
     let twoFactorData = null;
     blindingData = blindingData ?? { blinding_nonces: ["", ""] };
     let txDetails = await this.session.call(

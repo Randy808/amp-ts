@@ -15,6 +15,7 @@ import { CHALLENGE_PREFIX } from "./constants";
 import {
   checkFileExists,
   formatBitcoinMessageHash,
+  isAsyncFunction,
   readFile,
   writeFile,
 } from "./utils";
@@ -32,7 +33,7 @@ const lbtcBuffer = Buffer.concat([
   Buffer.from(NETWORK.assetHash, "hex").reverse(),
 ]);
 
-const SUBACCOUNT_ID = 1;
+const DEFAULT_SUBACCOUNT_ID = 1;
 const DEFAULT_FILE_PATH = "./seed-phrase.txt";
 
 export default class AmpWallet {
@@ -50,17 +51,37 @@ export default class AmpWallet {
     this.network = network;
   }
 
-  static async fromSigner(signer: AmpSigner): Promise<AmpWallet> {
-    let wallet = new AmpWallet(signer, new GreenClient(), signer.getNetwork());
+  static fromSignerAndClient(
+    signer: AmpSigner,
+    client?: GreenClient
+  ): AmpWallet {
+    let wallet = new AmpWallet(signer, client, signer.getNetwork());
+    const connectAndLoginToGreenBackend = {
+      get(target, prop, receiver) {
+        let _walletMethod = Reflect.get(target, prop, receiver);
+        return isAsyncFunction(_walletMethod)
+          ? async (args) => {
+              await target.connectToGreen();
+              await target.login();
+
+              try {
+                let result = await Reflect.apply(_walletMethod, target, [args]);
+                return result;
+              } finally {
+                await target.disconnect();
+              }
+            }
+          : _walletMethod;
+      },
+    };
+
+    wallet = new Proxy(wallet, connectAndLoginToGreenBackend);
+    debugger;
     return wallet;
   }
 
-  static async fromSignerAndClient(
-    signer: AmpSigner,
-    client?: GreenClient
-  ): Promise<AmpWallet> {
-    let wallet = new AmpWallet(signer, client, signer.getNetwork());
-    return wallet;
+  static fromSigner(signer: AmpSigner): AmpWallet {
+    return AmpWallet.fromSignerAndClient(signer, new GreenClient());
   }
 
   static async createWallet(network: NetworkString): Promise<AmpWallet> {
@@ -106,20 +127,20 @@ export default class AmpWallet {
     const loginBip32Keypair = this.signer.derive(0x4741b11e);
     const sig = loginBip32Keypair.sign(hash, true);
 
-    return this.client.login(loginBip32Keypair.publicKey, sig);
+    return this.client.login(sig);
   }
 
-  async getUnspentOutputs(): Promise<UnspentOutput[]> {
+  async getUnspentOutputs(subaccountId: number = DEFAULT_SUBACCOUNT_ID): Promise<UnspentOutput[]> {
     const MINIMUM_CONFIRMATIONS = 0;
     return this.client.getUnspentOutputs(
       MINIMUM_CONFIRMATIONS,
-      SUBACCOUNT_ID,
+      subaccountId,
       true
     );
   }
 
-  async getNewAddress(): Promise<GetNewAddressResponse> {
-    return this.client.getAddress(SUBACCOUNT_ID);
+  async getNewAddress(subaccountId: number = DEFAULT_SUBACCOUNT_ID): Promise<GetNewAddressResponse> {
+    return this.client.getAddress(subaccountId);
   }
 
   spendUnconfidentialLbtcOutput({
@@ -138,7 +159,7 @@ export default class AmpWallet {
     recipientAddress: string;
     feeInSats: number;
     prevoutIndex: number;
-  }) {
+  }, subaccountId: number = DEFAULT_SUBACCOUNT_ID) {
     if (feeInSats >= utxoAmountInSats) {
       throw new Error(
         "The fee needs to be smaller than the value of the utxo being sent"
@@ -200,12 +221,12 @@ export default class AmpWallet {
       });
     }
 
-    let subaccountPath = `84/1'/${SUBACCOUNT_ID}'`;
-    //First 1 is for subaccount index (since it's forcibly placed in on creation)
+    let subaccountPath = `84/1'/${subaccountId}'`;
+    //First path is for subaccount index (since it's forcibly placed in on creation)
     //Second '1' is for address pointer
     let p = this.signer
       .derivePath(subaccountPath)
-      .derive(SUBACCOUNT_ID)
+      .derive(subaccountId)
       .derive(1);
 
     pset.data.inputs[0].witnessUtxo = {
@@ -238,22 +259,28 @@ export default class AmpWallet {
     return this.client.sendRawTx(txHex, blindingNonces);
   }
 
-  async createAMPSubaccount(): Promise<GAID> {
+  async createAMPSubaccount(
+    subaccountId: number = DEFAULT_SUBACCOUNT_ID
+  ): Promise<GAID> {
     //TODO: Use a standard derivation path
-    let firstSubaccountKey = this.signer.derivePath(`84/1'/${SUBACCOUNT_ID}'`);
+    let firstSubaccountKey = this.signer.derivePath(`84/1'/${subaccountId}'`);
     let gaid = await this.client.createAMPSubaccount(
-      SUBACCOUNT_ID,
+      subaccountId,
       firstSubaccountKey.neutered().toBase58()
     );
 
     return gaid as GAID;
   }
 
-  async listAddresses() {
-    return this.client.listAddresses(SUBACCOUNT_ID);
+  async listAddresses(subaccountId: number = DEFAULT_SUBACCOUNT_ID) {
+    return this.client.listAddresses(subaccountId);
   }
 
   async connectToGreen() {
     return this.client.connect();
+  }
+
+  async disconnect() {
+    return this.client.disconnect();
   }
 }

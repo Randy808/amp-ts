@@ -95,3 +95,7 @@ export function askQuestion(query: string): Promise<string> {
     })
   );
 }
+
+export function isAsyncFunction(fn: any): fn is (...args: any[]) => Promise<any> {
+  return typeof fn === "function" && fn.constructor.name === "AsyncFunction";
+}
