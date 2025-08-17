@@ -23,8 +23,13 @@ async function main() {
     }
   }
 
-  // await wallet.getNewAddress();
   let addresses = await wallet.listAddresses();
+
+  if(addresses.length === 0) {
+    await wallet.getNewAddress();
+    addresses = await wallet.listAddresses();
+  }
+
   const oldestAddressIndex = addresses.length - 1;
   console.log(
     `Send testnet L-BTC to the following address (use liquidtestnet.com for faucet):\n${addresses[oldestAddressIndex].ad}`

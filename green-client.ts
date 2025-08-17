@@ -2,7 +2,7 @@ import autobahn from "autobahn";
 import * as bip66 from "bip66";
 import * as liquid from "liquidjs-lib";
 import { LIQUID_TESTNET_URL } from "./constants";
-import { getGaitPathBytes, uint8ArrayToHex } from "./utils";
+import { getGaitPathBytes, safelyStripAllLeadingZeros, uint8ArrayToHex } from "./utils";
 import { GetNewAddressResponse } from "./types/get-new-address-response";
 import AddressResponse from "./types/address-response";
 import { UnspentOutput } from "./types/unspent-output";
@@ -63,8 +63,11 @@ export class GreenClient {
   }
 
   public async login(sig: Uint8Array): Promise<any> {
-    const r = sig.slice(0, 32);
-    const s = sig.slice(32, 64);
+    let r = sig.slice(0, 32);
+    r = new Uint8Array(safelyStripAllLeadingZeros(r));
+
+    let s = sig.slice(32, 64);
+    s = new Uint8Array(safelyStripAllLeadingZeros(s));
     const derSig = bip66.encode(r, s);
 
     const res = await this.session!.call(
@@ -154,7 +157,10 @@ export class GreenClient {
     return fundVaultResponse;
   }
 
-  public async signRawTx(txHex: string, blindingData?: { blinding_nonces: string[] }) {
+  public async signRawTx(
+    txHex: string,
+    blindingData?: { blinding_nonces: string[] }
+  ) {
     let twoFactorData = null;
     blindingData = blindingData ?? { blinding_nonces: ["", ""] };
     let txDetails = await this.session.call(
